@@ -124,9 +124,9 @@ def main():
             'stops': stops
             })
 
-    # 保存到"position.tsv"文件中，每行格式：
+    # 保存到"locations.tsv"文件中，每行格式：
     # 时间    频率  一弦有效弦长  一弦音位（徽位，徽分） ... 七弦徽分
-    with open('position.tsv', 'w') as f:
+    with open('locations.tsv', 'w') as f:
         for item in results:
             ss = ''
             pos = item['chord_positions']
