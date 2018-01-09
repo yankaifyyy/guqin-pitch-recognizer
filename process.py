@@ -1,71 +1,12 @@
 import bisect
+import librosa
+import sounddevice as sd
+from chord import 三分损益, 正调
+from extractPitch import audio_to_pitch_melodia
+from constants import MTable, DTable
 
-FileName = '356.csv'  # 从Sonic Visualiser导出的数据文件
+FileName = '356.wav'  # 从Sonic Visualiser导出的数据文件
 Freq7 = 136  # 7弦散音，人工确定
-
-MTable = 徽值表 = [
-    0,  # 以岳山为0徽
-    1.0 / 8,
-    1.0 / 6,
-    1.0 / 5,
-    1.0 / 4,
-    1.0 / 3,
-    2.0 / 5,
-    1.0 / 2,
-    3.0 / 5,
-    2.0 / 3,
-    3.0 / 4,
-    4.0 / 5,
-    5.0 / 6,
-    7.0 / 8,
-    1.0  # 以龙龈为14徽
-]
-DTable = 徽距表 = [
-    1.0 / 8,
-    1.0 / 24,
-    1.0 / 30,
-    1.0 / 20,
-    1.0 / 12,
-    1.0 / 15,
-    1.0 / 10,
-    1.0 / 10,
-    1.0 / 15,
-    1.0 / 12,
-    1.0 / 20,
-    1.0 / 30,
-    1.0 / 24,
-    1.0 / 8,
-    1.0
-]
-
-
-# 使用正调定弦5612356，计算7根弦的散音频率（正调定弦5612356）
-def 正调定弦(七弦散音频率):
-    律数 = {
-        '宫': 81.0,
-        '商': 72.0,
-        '角': 64.0,
-        '徵': 54.0,
-        '羽': 48.0
-    }
-
-    羽 = 七弦散音频率
-    宫 = 羽 * 律数['羽'] / 律数['宫']
-    商 = 羽 * 律数['羽'] / 律数['商']
-    角 = 羽 * 律数['羽'] / 律数['角']
-    徵 = 羽 * 律数['羽'] / 律数['徵']
-    下徵 = 0.5 * 徵
-    下羽 = 0.5 * 羽
-
-    # 下标从0开始，0代表一弦，依次类推，6代表七弦
-    return [下徵, 下羽, 宫, 商, 角, 徵, 羽]
-
-
-# 读取Sonic Visualiser导出的音高曲线数据
-def readSonicFileCSV(filename):
-    with open(filename) as f:
-        lines = [tuple(map(float, l.strip().split(','))) for l in f]
-    return lines
 
 
 # 过滤负频率
@@ -99,13 +40,33 @@ def chordPositionToStops(pos):
 
 
 def main():
-    # 初始化各弦频率，使用正调定弦
-    Chords = 正调定弦(Freq7)
+    print('=====Configuring=====')
+    print('文件: ', FileName)
+    print('调弦：', '三分损益法-正调定弦')
 
-    # 读取文件名为FileName的音高数据文件
-    data = readSonicFileCSV(FileName)
+    # 初始化各弦频率，正调定弦，基于三分损益
+    Chords = 正调(Freq7, 三分损益)
+
+    print('======Loading=====')
+    wavData, sampleRate = librosa.load(FileName, sr=None)
+    print('采样率：', sampleRate)
+
+    print('\nPlayback? (yY/nN, default: n): n')
+    ch = input()
+    if ch == 'y' or ch == 'Y':
+        sd.play(wavData)
+        sd.wait()
+        print('Played!')
+
+    
+    print('=====Extracting pitch=====')
+    # 调用Melodia提取音高
+    pitchData = audio_to_pitch_melodia(wavData, sampleRate)
+    
     # 将音高曲线中的负频率过滤为0
-    data = filterOutNegFreqs(data)
+    data = filterOutNegFreqs(pitchData)
+
+    print('Pitch extracted!')
 
     # result 结构：
     # { 
