@@ -32,3 +32,6 @@ DTable = 徽距表 = [
     1.0 / 8,
     1.0
 ]
+
+FileName = '356.wav'  # 从Sonic Visualiser导出的数据文件
+DefaultFreq7 = 136  # 7弦散音，人工确定
