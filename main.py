@@ -1,138 +1,137 @@
-import librosa
 import sounddevice as sd
-from chord import 三分损益, 正调
-import extractPitch
-import stoppedNote
-from constants import DefaultFreq7
+from application import Application
+from constants import DefaultFreq7, MTable
+
+from canvasPainter import FingerTrajPainter
 
 import tkinter
+import tkinter.messagebox
 import tkinter.filedialog
 
-QinChords = [0] * 7
-Freq7 = DefaultFreq7
 
-wavData = None
-sampleRate = 0
+# 程序界面管理
+class GUI:
+    tk = tkinter.Tk()
 
-tkInstance = None
-playPauseBtn = None
-freq7Variable = None
-isPlaying = False
+    isPlaying = False
 
+    def __init__(self, app):
+        self.app = app
 
-# 初始化弦数、调弦等
-def initialiseQin():
-    global QinChords
+        self.initializeControls()
+        self.initializeCanvas()
 
-    QinChords = 正调(DefaultFreq7, 三分损益)
+        self.retuneCommand()
 
+    def initializeControls(self):
+        ctrlFrame = tkinter.Frame(self.tk)
+        ctrlFrame.pack()
 
-# 设置GUI界面
-def initialiseWindow():
-    global tkInstance
-    global freq7Variable
+        self.openBtn = tkinter.Button(
+            ctrlFrame, text='打开', command=self.openFileCommand)
+        self.openBtn.pack(side=tkinter.LEFT)
 
-    tkInstance = tkinter.Tk()
+        self.playPauseBtn = tkinter.Button(
+            ctrlFrame, text='播放', command=self.playAndStopWaveCommand)
+        self.playPauseBtn.pack(side=tkinter.LEFT)
 
-    lb = tkinter.Label(tkInstance, text='选择音频文件')
-    lb.pack()
-    openBtn = tkinter.Button(tkInstance, text='浏览', command=openFileCommand)
-    openBtn.pack()
+        freqFrame = tkinter.Frame(self.tk)
+        freqFrame.pack()
+        lb = tkinter.Label(freqFrame, text='七弦频率')
+        lb.pack(side=tkinter.LEFT)
 
-    lb2 = tkinter.Label(tkInstance, text='设置七弦频率')
-    lb2.pack()
-    freq7Variable = tkinter.DoubleVar(value=Freq7)
-    freq7Entry = tkinter.Entry(tkInstance, textvariable=freq7Variable)
-    freq7Entry.pack()
-    setQinBtn = tkinter.Button(tkInstance, text='设置', command=setQinCommand)
-    setQinBtn.pack()
+        self.freq7Variable = tkinter.DoubleVar(value=DefaultFreq7)
+        self.freq7Entry = tkinter.Entry(
+            freqFrame, textvariable=self.freq7Variable)
+        self.freq7Entry.pack(side=tkinter.LEFT)
 
-    global playPauseBtn
-    playPauseBtn = tkinter.Button(
-        tkInstance, text='播放', command=playOrPauseWavCommand)
-    playPauseBtn.pack()
+        self.retuneBtn = tkinter.Button(
+            freqFrame, text='调弦设置', command=self.retuneCommand)
+        self.retuneBtn.pack(side=tkinter.LEFT)
 
-    analyseBtn = tkinter.Button(
-        tkInstance, text='分析', command=analyseCommand
-    )
-    analyseBtn.pack()
+        self.analyzeBtn = tkinter.Button(
+            self.tk, text='分析指迹', command=self.analyzeCommand)
+        self.analyzeBtn.pack()
 
+    # 图形画在Canvas上
+    def initializeCanvas(self):
+        width = 1000
+        height = 800
 
-def initialise():
-    initialiseQin()
-    initialiseWindow()
+        self.canvas = tkinter.Canvas(
+            self.tk, width=width, height=height, bg='white')
+        self.canvas.pack(padx=50, pady=0)
 
+        self.painter = FingerTrajPainter(self.canvas, width, height)
+        self.painter.updateQin(self.app.qin)
 
-def load(fname):
-    global wavData
-    global sampleRate
+        self.drawAxes()
 
-    print('======Loading=====')
-    wavData, sampleRate = librosa.load(fname, sr=None)
-    print('采样率：', sampleRate)
+    def drawAxes(self):
+        self.painter.drawAxes()
 
+    def createScale(self, domain, rg):
+        k = (rg[1] - rg[0]) / (domain[1] - domain[0])
 
-def setQinCommand():
-    global freq7Variable
-    global Freq7
-    global QinChords
+        def scaleFunc(val):
+            return k * (val - domain[0]) + rg[0]
 
-    Freq7 = freq7Variable.get()
+        return scaleFunc
 
-    QinChords = 正调(Freq7, 三分损益)
+    def run(self):
+        self.tk.mainloop()
 
+    def openFileCommand(self):
+        filename = tkinter.filedialog.askopenfilename(
+            filetypes=(('音频文件', '*.wav'), ('All files', '*.*'))
+        )
 
-def playOrPauseWavCommand():
-    global wavData
-    global isPlaying
-    global playPauseBtn
+        if filename != '':
+            try:
+                self.app.load(filename)
 
-    # 切换播放状态（没有暂停功能）
-    if isPlaying:
-        sd.stop()
-        playPauseBtn['text'] = '播放'
-        isPlaying = False
-    else:
-        if not wavData is None:
-            sd.play(wavData)
-            playPauseBtn['text'] = '停止'
-            isPlaying = True
+                info = '读取音频文件 ' + filename + ' 成功\n采样率=' + \
+                    str(self.app.sampleRate) + 'Hz。'
+                tkinter.messagebox.showinfo(title='读取成功！', message=info)
+            except:
+                tkinter.messagebox.showerror(
+                    title='读取失败！', message='加载音频文件失败！')
 
+    def playAndStopWaveCommand(self):
+        if self.isPlaying:
+            sd.stop()
+            self.playPauseBtn['text'] = '播放'
+            self.isPlaying = False
+        else:
+            if not self.app.waveData is None:
+                sd.play(self.app.waveData)
+                self.playPauseBtn['text'] = '停止'
+                self.isPlaying = True
 
-def openFileCommand():
-    filename = tkinter.filedialog.askopenfilename(
-        filetypes=(("wave files", "*.wav"), ("all files", "*.*")))
-    if filename != '':
-        load(filename)
+    def retuneCommand(self):
+        currentFrequency7 = self.app.currentFrequency7()
+        try:
+            freq7 = self.freq7Variable.get()
+            self.app.retune(freq7)
+        except:
+            self.app.retune(currentFrequency7)
+            tkinter.messagebox.showerror(title='调弦失败！', message='不合理的七弦散音频率！')
+        
+        # 重新绘制图形
+        self.painter.updateQin(self.app.qin)
 
+    def analyzeCommand(self):
+        self.app.analyze()
 
-def analyseCommand():
-    if not wavData is None:
-        print('=====Extracting pitch=====')
-        pitchData = extractPitch.extract_pitch(wavData, sampleRate)
-
-        print('Pitch extracted!')
-
-        results = stoppedNote.transform(pitchData, QinChords)
-
-        # 保存到"locations.tsv"文件中，每行格式：
-        # 时间    频率  一弦有效弦长  一弦音位（徽位，徽分） ... 七弦徽分
-        with open('locations.tsv', 'w') as f:
-            for item in results:
-                ss = ''
-                pos = item['chord_positions']
-                stops = item['stops']
-                for i in range(7):
-                    ss += str(pos[i]) + '\t' + str(stops[i]) + '\t'
-                line = '{0}\t{1}Hz\t{2}\n'.format(
-                    item['timestamp'], item['frequency'], ss)
-                f.write(line)
+        if not self.app.pitchData is None:
+            self.painter.drawCurve(self.app.pitchData, 5)
 
 
 def main():
-    initialise()
+    app = Application()
+    gui = GUI(app)
 
-    tkInstance.mainloop()
+    gui.run()
 
 
 if __name__ == '__main__':
