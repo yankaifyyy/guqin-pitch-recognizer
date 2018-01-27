@@ -111,6 +111,9 @@ class FingerTrajPainter:
             # 异常情况，不会出现的
             return
 
+        # 先清理掉所有标签为'curve-dot'的点
+        self.canvas.delete('curve-dot')
+
         xoffset = self.LeftOffset
         yoffset = self.TopOffset + self.QinHeight + self.AxesTickSize
 
@@ -139,4 +142,4 @@ class FingerTrajPainter:
                     x = xScale(pos)
                     y = yScale(tm)
                     self.canvas.create_oval(
-                        x - radius, y - radius, x + radius, y + radius, fill='#555', outline='')
+                        x - radius, y - radius, x + radius, y + radius, fill='#555', outline='', tags='curve-dot')

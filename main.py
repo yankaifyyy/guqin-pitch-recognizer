@@ -1,19 +1,21 @@
-import sounddevice as sd
+# import sounddevice as sd
 from application import Application
 from constants import DefaultFreq7, MTable
 
 from canvasPainter import FingerTrajPainter
+from musicPlayer import MusicPlayer
 
 import tkinter
 import tkinter.messagebox
 import tkinter.filedialog
+from tkinter import ttk
 
 
 # 程序界面管理
 class GUI:
     tk = tkinter.Tk()
 
-    isPlaying = False
+    player = MusicPlayer()
 
     def __init__(self, app):
         self.app = app
@@ -49,8 +51,19 @@ class GUI:
             freqFrame, text='调弦设置', command=self.retuneCommand)
         self.retuneBtn.pack(side=tkinter.LEFT)
 
+        chordFrame = tkinter.Frame(self.tk)
+        chordFrame.pack()
+        lb2 = tkinter.Label(chordFrame, text='当前使用的弦：')
+        lb2.pack(side=tkinter.LEFT)
+        possibleChords = ('一', '二', '三', '四', '五', '六', '七')
+        self.chordList = ttk.Combobox(
+            chordFrame, values=possibleChords, state='readonly')
+        self.chordList.current(6)
+        self.chordList.pack(side=tkinter.LEFT)
+        self.chordList.bind('<<ComboboxSelected>>', self.chordChanged)
+
         self.analyzeBtn = tkinter.Button(
-            self.tk, text='分析指迹', command=self.analyzeCommand)
+            chordFrame, text='分析指迹', command=self.analyzeCommand)
         self.analyzeBtn.pack()
 
     # 图形画在Canvas上
@@ -98,15 +111,8 @@ class GUI:
                     title='读取失败！', message='加载音频文件失败！')
 
     def playAndStopWaveCommand(self):
-        if self.isPlaying:
-            sd.stop()
-            self.playPauseBtn['text'] = '播放'
-            self.isPlaying = False
-        else:
-            if not self.app.waveData is None:
-                sd.play(self.app.waveData)
-                self.playPauseBtn['text'] = '停止'
-                self.isPlaying = True
+        if not self.app.waveData is None:
+            self.player.play(self.app.waveData, self.app.sampleRate)
 
     def retuneCommand(self):
         currentFrequency7 = self.app.currentFrequency7()
@@ -116,15 +122,22 @@ class GUI:
         except:
             self.app.retune(currentFrequency7)
             tkinter.messagebox.showerror(title='调弦失败！', message='不合理的七弦散音频率！')
-        
+
         # 重新绘制图形
         self.painter.updateQin(self.app.qin)
+
+    def chordChanged(self, event):
+        # 更换弦时重绘指迹图
+        if not self.app.pitchData is None:
+            self.painter.drawCurve(
+                self.app.pitchData, self.chordList.current())
 
     def analyzeCommand(self):
         self.app.analyze()
 
         if not self.app.pitchData is None:
-            self.painter.drawCurve(self.app.pitchData, 5)
+            self.painter.drawCurve(
+                self.app.pitchData, self.chordList.current())
 
 
 def main():
