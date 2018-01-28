@@ -1,4 +1,4 @@
-import librosa
+from librosa import load as rosaload
 
 import extractPitch
 
@@ -16,7 +16,7 @@ class Application:
     pitchData = None
 
     def load(self, filename):
-        self.waveData, self.sampleRate = librosa.load(filename, sr=None)
+        self.waveData, self.sampleRate = rosaload(filename, sr=None, res_type='scipy')
 
     def retune(self, 七弦散音, 琴调=正调, 调弦法=三分损益):
         self.qin.tune(七弦散音, 琴调, 调弦法)

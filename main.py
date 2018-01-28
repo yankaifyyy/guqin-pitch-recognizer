@@ -1,19 +1,21 @@
-# import sounddevice as sd
+# 所有的import语句都使用最细粒度的描述，减小生成的exe大小
 from application import Application
 from constants import DefaultFreq7, MTable
 
 from canvasPainter import FingerTrajPainter
 from musicPlayer import MusicPlayer
 
-import tkinter
-import tkinter.messagebox
-import tkinter.filedialog
-from tkinter import ttk
+from tkinter import Tk, Frame, Button, Label, Entry, Canvas
+from tkinter import DoubleVar
+from tkinter import LEFT as TK_LEFT
+from tkinter.filedialog import askopenfilename
+from tkinter.messagebox import showinfo, showerror
+from tkinter.ttk import Combobox
 
 
 # 程序界面管理
 class GUI:
-    tk = tkinter.Tk()
+    tk = Tk()
 
     player = MusicPlayer()
 
@@ -26,43 +28,43 @@ class GUI:
         self.retuneCommand()
 
     def initializeControls(self):
-        ctrlFrame = tkinter.Frame(self.tk)
+        ctrlFrame = Frame(self.tk)
         ctrlFrame.pack()
 
-        self.openBtn = tkinter.Button(
+        self.openBtn = Button(
             ctrlFrame, text='打开', command=self.openFileCommand)
-        self.openBtn.pack(side=tkinter.LEFT)
+        self.openBtn.pack(side=TK_LEFT)
 
-        self.playPauseBtn = tkinter.Button(
+        self.playPauseBtn = Button(
             ctrlFrame, text='播放', command=self.playAndStopWaveCommand)
-        self.playPauseBtn.pack(side=tkinter.LEFT)
+        self.playPauseBtn.pack(side=TK_LEFT)
 
-        freqFrame = tkinter.Frame(self.tk)
+        freqFrame = Frame(self.tk)
         freqFrame.pack()
-        lb = tkinter.Label(freqFrame, text='七弦频率')
-        lb.pack(side=tkinter.LEFT)
+        lb = Label(freqFrame, text='七弦频率')
+        lb.pack(side=TK_LEFT)
 
-        self.freq7Variable = tkinter.DoubleVar(value=DefaultFreq7)
-        self.freq7Entry = tkinter.Entry(
+        self.freq7Variable = DoubleVar(value=DefaultFreq7)
+        self.freq7Entry = Entry(
             freqFrame, textvariable=self.freq7Variable)
-        self.freq7Entry.pack(side=tkinter.LEFT)
+        self.freq7Entry.pack(side=TK_LEFT)
 
-        self.retuneBtn = tkinter.Button(
+        self.retuneBtn = Button(
             freqFrame, text='调弦设置', command=self.retuneCommand)
-        self.retuneBtn.pack(side=tkinter.LEFT)
+        self.retuneBtn.pack(side=TK_LEFT)
 
-        chordFrame = tkinter.Frame(self.tk)
+        chordFrame = Frame(self.tk)
         chordFrame.pack()
-        lb2 = tkinter.Label(chordFrame, text='当前使用的弦：')
-        lb2.pack(side=tkinter.LEFT)
+        lb2 = Label(chordFrame, text='当前使用的弦：')
+        lb2.pack(side=TK_LEFT)
         possibleChords = ('一', '二', '三', '四', '五', '六', '七')
-        self.chordList = ttk.Combobox(
+        self.chordList = Combobox(
             chordFrame, values=possibleChords, state='readonly')
         self.chordList.current(6)
-        self.chordList.pack(side=tkinter.LEFT)
+        self.chordList.pack(side=TK_LEFT)
         self.chordList.bind('<<ComboboxSelected>>', self.chordChanged)
 
-        self.analyzeBtn = tkinter.Button(
+        self.analyzeBtn = Button(
             chordFrame, text='分析指迹', command=self.analyzeCommand)
         self.analyzeBtn.pack()
 
@@ -71,7 +73,7 @@ class GUI:
         width = 1000
         height = 800
 
-        self.canvas = tkinter.Canvas(
+        self.canvas = Canvas(
             self.tk, width=width, height=height, bg='white')
         self.canvas.pack(padx=50, pady=0)
 
@@ -95,7 +97,7 @@ class GUI:
         self.tk.mainloop()
 
     def openFileCommand(self):
-        filename = tkinter.filedialog.askopenfilename(
+        filename = askopenfilename(
             filetypes=(('音频文件', '*.wav'), ('All files', '*.*'))
         )
 
@@ -105,9 +107,9 @@ class GUI:
 
                 info = '读取音频文件 ' + filename + ' 成功\n采样率=' + \
                     str(self.app.sampleRate) + 'Hz。'
-                tkinter.messagebox.showinfo(title='读取成功！', message=info)
+                showinfo(title='读取成功！', message=info)
             except:
-                tkinter.messagebox.showerror(
+                showerror(
                     title='读取失败！', message='加载音频文件失败！')
 
     def playAndStopWaveCommand(self):
@@ -121,7 +123,7 @@ class GUI:
             self.app.retune(freq7)
         except:
             self.app.retune(currentFrequency7)
-            tkinter.messagebox.showerror(title='调弦失败！', message='不合理的七弦散音频率！')
+            showerror(title='调弦失败！', message='不合理的七弦散音频率！')
 
         # 重新绘制图形
         self.painter.updateQin(self.app.qin)

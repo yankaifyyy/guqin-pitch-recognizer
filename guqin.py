@@ -1,4 +1,4 @@
-import bisect
+from bisect import bisect
 from constants import MTable, DTable
 
 from chord import 三分损益, 正调
@@ -25,7 +25,7 @@ class GuQin:
             return (15.0, 0.0)
     
         # 徽位：二分查找小于等于length的最大徽值M
-        x = bisect.bisect(MTable, length) - 1
+        x = bisect(MTable, length) - 1
         # 计算对应徽分
         y = (pos - MTable[x]) / DTable[x]
         

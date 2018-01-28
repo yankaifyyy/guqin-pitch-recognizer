@@ -1,5 +1,4 @@
-import vamp
-import numpy as np
+from vamp import collect
 
 
 # melodia plugin参数列表：
@@ -12,7 +11,7 @@ def audio_to_pitch_melodia(wav_data, fs=44100, minfqr=55.0, maxfqr=1760.0, voici
 
     params = dict(minfqr=minfqr, maxfqr=maxfqr, voicing=voicing,
                   minpeaksalience=minpeaksalience)
-    melody = vamp.collect(
+    melody = collect(
         wav_data, fs, 'mtg-melodia:melodia', parameters=params)
 
     timestep = melody['vector'][0].to_float()

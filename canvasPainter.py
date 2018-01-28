@@ -1,6 +1,3 @@
-import tkinter
-import time
-
 from constants import MTable
 
 
@@ -79,7 +76,7 @@ class FingerTrajPainter:
 
             text = str(round(hz, 2)) + 'Hz'
             self.canvas.create_text(
-                xoffset - 5, y, anchor=tkinter.E, text=text)
+                xoffset - 5, y, anchor='e', text=text)
 
     def drawAxes(self):
         xoffset = self.LeftOffset
