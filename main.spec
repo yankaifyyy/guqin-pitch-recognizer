@@ -19,19 +19,15 @@ a = Analysis(['main.py'],
              cipher=block_cipher)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+# a.binaries = a.binaries - TOC([('mkl_avx512_mic.dll', 'mkl_avx512.dll', 'mkl_avx2.dll', 'mkl_mc3.dll', 'mkl_avx.dll', 'mkl_mc.dll', 'mkl_core.dll', 'mkl_def.dll', 'mkl_intel_thread.dll')])
 exe = EXE(pyz,
           a.scripts,
-          exclude_binaries=True,
+          a.binaries,
+          a.zipfiles,
+          a.datas,
           name='main',
           debug=False,
           strip=False,
-          upx=True,
-          console=True )
-print(a.binaries)
-coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=False,
-               upx=False,
-               name='main')
+          upx=False,
+          runtime_tmpdir=None,
+          console=False )

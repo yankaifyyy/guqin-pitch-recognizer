@@ -7,9 +7,8 @@ PyAudio == 0.2.11
 # application.py: 1
 librosa == 0.5.1
 
-# extractPitch.py: 2
 # musicPlayer.py: 2
-numpy == 1.13.3
+numpy >= 1.10.0
 
 # extractPitch.py: 1
 vamp == 1.1.0
